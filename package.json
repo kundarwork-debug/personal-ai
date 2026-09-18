@@ -1,0 +1,9 @@
+{
+  "name": "apml-telegram-proxy",
+  "version": "1.0.0",
+  "description": "Serverless proxy for Telegram downloads",
+  "main": "api/proxy-download.js",
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
+}
