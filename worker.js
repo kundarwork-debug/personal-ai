@@ -125,11 +125,10 @@ export default {
       try { body = await request.json(); } catch { return json({ error: "Invalid request." }, 400); }
       const user = await getSupabaseUser(body.access_token, env);
       if (!user || !body.refresh_token) return json({ error: "This Google account is not authorized for NOVA." }, 403);
-      const headers = new Headers();
-      headers.append("Set-Cookie", cookie(ACCESS_COOKIE, body.access_token, 3600));
-      headers.append("Set-Cookie", cookie(REFRESH_COOKIE, body.refresh_token, 60 * 60 * 24 * 30));
-      headers.set("Cache-Control", "no-store");
-      return json({ ok: true }, 200, Object.fromEntries(headers.entries()));
+      return withCookies(json({ ok: true }), [
+        cookie(ACCESS_COOKIE, body.access_token, 3600),
+        cookie(REFRESH_COOKIE, body.refresh_token, 60 * 60 * 24 * 30)
+      ]);
     }
 
     if (url.pathname === "/auth/logout") {
@@ -142,7 +141,7 @@ export default {
     if (url.pathname === "/auth/me") {
       const auth = await authorize(request, env);
       if (!auth) return json({ error: "Sign-in required." }, 401);
-      return json({ email: auth.user.email, id: auth.user.id }, 200, Object.fromEntries(auth.cookies.map((value, index) => [`Set-Cookie-${index}`, value])));
+      return withCookies(json({ email: auth.user.email, id: auth.user.id }), auth.cookies);
     }
 
     if (url.pathname === "/login" || url.pathname === "/auth/callback") {
