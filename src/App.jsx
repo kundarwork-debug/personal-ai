@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Activity, ArrowUpRight, Bell, CalendarDays, Check, ChevronRight,
-  CircleHelp, Clock3, Command, Home, Lightbulb, ListTodo, Menu,
+  CircleHelp, Clock3, Command, Home, Lightbulb, ListTodo, LogOut, Menu,
   MessageSquareText, Plus, Search, Settings2, Sparkles, StickyNote,
   Target, X
 } from "lucide-react";
@@ -51,6 +51,27 @@ export default function App() {
   const [mobileNav, setMobileNav] = useState(false);
   const [toast, setToast] = useState("");
   const [greeting, setGreeting] = useState("Hey! I'm NOVA. Your ideas have a home here.");
+  const [accountEmail, setAccountEmail] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    fetch("/auth/me", { credentials: "same-origin" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Sign-in required");
+        return response.json();
+      })
+      .then((user) => {
+        if (active) setAccountEmail(user.email || "");
+      })
+      .catch(() => {
+        if (active) window.location.replace("/login");
+      });
+    return () => { active = false; };
+  }, []);
+
+  function signOut() {
+    window.location.assign("/auth/logout");
+  }
 
   const dateLabel = useMemo(
     () => new Intl.DateTimeFormat("en-IN", { weekday: "long", day: "numeric", month: "long" }).format(new Date()),
@@ -120,7 +141,9 @@ export default function App() {
           </div>
           <div className="topbar-right">
             <span className="today-label"><CalendarDays size={14} />{dateLabel}</span>
-            <span className="avatar">K</span>
+            <span className="account-email">{accountEmail}</span>
+            <span className="avatar">{accountEmail ? accountEmail.charAt(0).toUpperCase() : "N"}</span>
+            <button className="logout-button" onClick={signOut} aria-label="Sign out"><LogOut size={15} /><span>Sign out</span></button>
           </div>
         </header>
 
