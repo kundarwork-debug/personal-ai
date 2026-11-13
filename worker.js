@@ -152,7 +152,7 @@ export default {
     }
 
     const auth = await authorize(request, env);
-    if (!auth) return loginPage(env);
+    if (!auth) return loginPage(env, request);
 
     const assetResponse = await env.ASSETS.fetch(request);
     return withCookies(assetResponse, auth.cookies);
