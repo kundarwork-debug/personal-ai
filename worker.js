@@ -81,14 +81,14 @@ async function authorize(request, env) {
   }
 }
 
-async function loginPage(env) {
+async function loginPage(env, request) {
   if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
     return new Response("NOVA sign-in is not configured yet. Add SUPABASE_URL and SUPABASE_ANON_KEY to the Worker variables.", {
       status: 503,
       headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" }
     });
   }
-  const asset = await env.ASSETS.fetch(new Request("https://nova.internal/login.html"));
+  const asset = await env.ASSETS.fetch(new Request(new URL("/login.html", request.url)));
   const html = (await asset.text())
     .replaceAll("__SUPABASE_URL__", env.SUPABASE_URL)
     .replaceAll("__SUPABASE_ANON_KEY__", env.SUPABASE_ANON_KEY);
@@ -98,16 +98,17 @@ async function loginPage(env) {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "no-store, private",
       "X-Content-Type-Options": "nosniff",
-      "Referrer-Policy": "strict-origin-when-cross-origin"
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "X-Robots-Tag": "noindex, nofollow"
     }
   });
 }
 
 function withCookies(response, cookies = []) {
-  if (!cookies.length) return response;
   const headers = new Headers(response.headers);
   for (const value of cookies) headers.append("Set-Cookie", value);
   headers.set("Cache-Control", "private, no-store");
+  headers.set("X-Robots-Tag", "noindex, nofollow");
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 
@@ -147,7 +148,7 @@ export default {
     if (url.pathname === "/login" || url.pathname === "/auth/callback") {
       const auth = await authorize(request, env);
       if (auth) return Response.redirect(new URL("/", request.url), 302);
-      return loginPage(env);
+      return loginPage(env, request);
     }
 
     const auth = await authorize(request, env);
